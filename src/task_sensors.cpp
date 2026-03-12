@@ -40,17 +40,19 @@ void sensorsInit() {
   imu.writeReg(LSM6::CTRL3_C, 0x44);
   // CTRL4_C (0x13) : XL_BW_SCAL_ODR=1 (BW_XL actif) -> 0x80
   imu.writeReg(LSM6::CTRL4_C, 0x80);
+  // CTRL5_C (0x14) : arrondi acc + gyro pour réduire le bruit LSB (Table 55: 011)
+  imu.writeReg(LSM6::CTRL5_C, 0x03);
   // CTRL6_C (0x15) : XL_HM_MODE=0 (high performance) -> 0x00
   imu.writeReg(LSM6::CTRL6_C, 0x00);
   // CTRL7_G (0x16) : HPF gyro activé, coupure très basse -> 0x40
   imu.writeReg(LSM6::CTRL7_G, 0x40);
 
   // --- CONFIG LIS3MDL (magnétomètre) ---
-  // CTRL_REG1 (0x20) : ODR=40 Hz, X/Y en high-performance, temp off -> 0x58
-  mag.writeReg(LIS3MDL::CTRL_REG1, 0x58);
+  // CTRL_REG1 (0x20) : ODR=20 Hz (au lieu de 40), X/Y high-perf, temp off -> moins de bruit
+  mag.writeReg(LIS3MDL::CTRL_REG1, 0x50);
   // CTRL_REG2 (0x21) : FS = ±4 gauss -> 0x00
   mag.writeReg(LIS3MDL::CTRL_REG2, 0x00);
-  // CTRL_REG3 (0x22) : mode continu, 4-wire SPI/I2C -> 0x00
+  // CTRL_REG3 (0x22) : mode continu, 4-wire -> 0x00
   mag.writeReg(LIS3MDL::CTRL_REG3, 0x00);
   // CTRL_REG4 (0x23) : Z en high-performance -> 0x08
   mag.writeReg(LIS3MDL::CTRL_REG4, 0x08);
@@ -63,6 +65,12 @@ void sensorsInit() {
   // CTRL_REG1 (0x20) : ODR ≈ 7 Hz, BDU=1, PD=1 -> 0xAA
   ps.writeReg(LPS::CTRL_REG1, 0xAA);
 
+  // --- AUTRES OPTIONS REGISTRES (si besoin d'aller plus loin) ---
+  // LSM6 : ODR 52 Hz au lieu de 104 (CTRL1_XL 0x33, CTRL2_G 0x33) = encore plus lisse.
+  // LSM6 : BW_XL 100 Hz au lieu de 50 (CTRL1_XL 0x42) = moins lisse, plus réactif.
+  // LIS3MDL : ODR 10 Hz (CTRL_REG1 0x48) = mag très lisse, cap plus lent.
+  // LPS25H : pas d'autre reg de filtrage utile ; RES_CONF=0x0F est déjà le max.
+
   // Mutex pour protéger les données partagées
   mutexSensors = xSemaphoreCreateMutex();
   if (mutexSensors == nullptr) {
@@ -73,9 +81,17 @@ void sensorsInit() {
 }
 
 // === TÂCHE CAPTEURS ==================================================
+// Filtre exponentiel (alpha petit = plus lisse, plus de lag)
+static const float ALPHA_ACC  = 0.25f;
+static const float ALPHA_GYRO = 0.25f;
+static const float ALPHA_MAG   = 0.2f;
+static const float ALPHA_BARO = 0.3f;
+
 void taskSensors(void *pvParameters) {
   const TickType_t period = pdMS_TO_TICKS(10); // 100 Hz
   TickType_t lastWake = xTaskGetTickCount();
+  static bool firstRun = true;
+  static SensorsData filt;
 
   for (;;) {
     imu.read();
@@ -88,20 +104,41 @@ void taskSensors(void *pvParameters) {
 
     if (mutexSensors != nullptr &&
         xSemaphoreTake(mutexSensors, pdMS_TO_TICKS(1)) == pdTRUE) {
-      gSensors.acc[0] = imu.a.x;
-      gSensors.acc[1] = imu.a.y;
-      gSensors.acc[2] = imu.a.z;
-      gSensors.gyro[0] = imu.g.x;
-      gSensors.gyro[1] = imu.g.y;
-      gSensors.gyro[2] = imu.g.z;
-      gSensors.mag[0] = mag.m.x;
-      gSensors.mag[1] = mag.m.y;
-      gSensors.mag[2] = mag.m.z;
-      gSensors.lpsPressure = pLps;
-      gSensors.lpsAlt = altLps;
-      gSensors.bmpTemp = tBmp;
-      gSensors.bmpPressure = pBmp;
-      gSensors.bmpAlt = altBmp;
+      // Premier échantillon : initialiser le filtre
+      if (firstRun) {
+        filt.acc[0] = imu.a.x;
+        filt.acc[1] = imu.a.y;
+        filt.acc[2] = imu.a.z;
+        filt.gyro[0] = imu.g.x;
+        filt.gyro[1] = imu.g.y;
+        filt.gyro[2] = imu.g.z;
+        filt.mag[0] = mag.m.x;
+        filt.mag[1] = mag.m.y;
+        filt.mag[2] = mag.m.z;
+        filt.lpsPressure = pLps;
+        filt.lpsAlt = altLps;
+        filt.bmpTemp = tBmp;
+        filt.bmpPressure = pBmp;
+        filt.bmpAlt = altBmp;
+        firstRun = false;
+      } else {
+        // Filtre exponentiel : out = out + alpha * (raw - out)
+        filt.acc[0] += ALPHA_ACC  * (imu.a.x   - filt.acc[0]);
+        filt.acc[1] += ALPHA_ACC  * (imu.a.y   - filt.acc[1]);
+        filt.acc[2] += ALPHA_ACC  * (imu.a.z   - filt.acc[2]);
+        filt.gyro[0] += ALPHA_GYRO * (imu.g.x   - filt.gyro[0]);
+        filt.gyro[1] += ALPHA_GYRO * (imu.g.y   - filt.gyro[1]);
+        filt.gyro[2] += ALPHA_GYRO * (imu.g.z   - filt.gyro[2]);
+        filt.mag[0] += ALPHA_MAG   * (mag.m.x   - filt.mag[0]);
+        filt.mag[1] += ALPHA_MAG   * (mag.m.y   - filt.mag[1]);
+        filt.mag[2] += ALPHA_MAG   * (mag.m.z   - filt.mag[2]);
+        filt.lpsPressure += ALPHA_BARO * (pLps   - filt.lpsPressure);
+        filt.lpsAlt += ALPHA_BARO * (altLps - filt.lpsAlt);
+        filt.bmpTemp += ALPHA_BARO * (tBmp - filt.bmpTemp);
+        filt.bmpPressure += ALPHA_BARO * (pBmp - filt.bmpPressure);
+        filt.bmpAlt += ALPHA_BARO * (altBmp - filt.bmpAlt);
+      }
+      gSensors = filt;
       xSemaphoreGive(mutexSensors);
     }
 
