@@ -5,7 +5,7 @@
 // === TÂCHE SERVOS (squelette pour 8 PWM) =============================
 // À compléter : configuration LEDC + gestion d'une file de commandes.
 void taskServos(void *pvParameters) {
-  for (;;) {
+  for (;;) { 
     // Exemple : en attendant la vraie logique de servos
     vTaskDelay(pdMS_TO_TICKS(50));
   }
