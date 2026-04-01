@@ -8,7 +8,7 @@
 void taskJson(void *pvParameters) {
   const TickType_t period = pdMS_TO_TICKS(50); // 20 Hz
   TickType_t lastWake = xTaskGetTickCount();
-
+  int divisImprim=0;
   for (;;) {
     SensorsData snap;
 
@@ -52,6 +52,7 @@ void taskJson(void *pvParameters) {
     bmpObj["altitude"] = snap.bmpAlt;
 
     serializeJson(doc, Serial);*/
+    
     Serial.println();
 
     Serial.print(">acc_x:"); Serial.println(snap.acc[0]);
