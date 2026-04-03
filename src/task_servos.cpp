@@ -63,13 +63,13 @@ void taskServos(void *pvParameters) {
     }
 
     // Départ : tous les servos à 0°
-    setAllServos(positionDef);
-
+    setAllServos(positionDrt);
+    vTaskDelay(pdMS_TO_TICKS(3500));
     for (;;) {    
         
         for(int i=0;i<12;i++){
             setAllServos(positionMar[i]);
-            vTaskDelay(pdMS_TO_TICKS(700));
+            vTaskDelay(pdMS_TO_TICKS(900));
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
     }

@@ -4,6 +4,7 @@
 static const float positionDef[8]= { 80, 90, 80, 90, 75, 90, 75, 90};
 static const float positionBas[8]= { 60,115, 60,115, 60,115, 60,115};
 
+static const float positionDrt[8] = {90,90,90,90,90,90,90,90};
 static const float positionMar[12][8]= {
     //Séquence avant droit
  { 115,  90,  80,  90,  80,  90, 115,  90},//met la patte devant
