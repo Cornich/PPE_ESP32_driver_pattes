@@ -1,5 +1,6 @@
-static const float positionDef[8]= { 75, 90, 75, 90, 75, 90, 75, 90};
-static const float positionBas[8]= {135,10, 135,10, 45,95, 95,95};
+static const float positionDef[8]= { 135, 120, 135, 120,135, 120,135, 120};
+static const float positionBas[8]= {135,10, 135,10, 45,95, 135,95};
+static const float position090[8] ={90,90,90,90,90,90,90,90};
 
 
 #define nbPosAvancer 12
@@ -28,5 +29,4 @@ static const float positionMar[nbPosAvancer][8]= {
  { dha, dba,pha[3], pba[3],phr[3], pbr[3], dhr, dbr},//plie pour ramener
  { dha, dba, pha[4],pba[4],phr[4], pbr[4], dhr, dbr},//ramène
  { dha, dba, dha, dba,dhr, dbr, dhr, dbr}//position initiale
-
 };

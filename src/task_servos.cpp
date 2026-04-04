@@ -67,6 +67,9 @@ void avancer(){
         vTaskDelay(pdMS_TO_TICKS(300));
     }
 }
+void setPositionDef(){
+    setAllServos(position090);
+}
 // === TÂCHE SERVOS ====================================================
 void taskServos(void *pvParameters) {
     hTaskServos = xTaskGetCurrentTaskHandle(); // enregistre le handle
@@ -89,7 +92,10 @@ void taskServos(void *pvParameters) {
                     avancer();
                     break;
                 }
-                case 'b': /* action B */ break;
+                case 'd': {
+                    setPositionDef();
+                    break;
+                };
             }
       }
        vTaskDelay(pdMS_TO_TICKS(100)); // Évite le busy-loop 

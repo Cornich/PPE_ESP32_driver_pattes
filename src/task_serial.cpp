@@ -11,8 +11,8 @@ void taskSerial(void *pvParameters) {
           // Notifie taskServos avec la valeur 'a'
           xTaskNotify(hTaskServos, (uint32_t)'a', eSetValueWithOverwrite);
           break;
-        case 'b':
-          xTaskNotify(hTaskServos, (uint32_t)'b', eSetValueWithOverwrite);
+        case 'd':
+          xTaskNotify(hTaskServos, (uint32_t)'d', eSetValueWithOverwrite);
           break;
         // Ajoutez d'autres commandes ici
       }

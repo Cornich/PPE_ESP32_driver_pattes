@@ -13,8 +13,8 @@ void setup() {
   sensorsInit();
 
   // Création des tâches (comme pour la manette RTOS)
-  //xTaskCreatePinnedToCore(taskSensors, "Sensors", 4096, NULL, 2, NULL, 0);
-  //xTaskCreatePinnedToCore(taskJson,    "JSON",    4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(taskSensors, "Sensors", 4096, NULL, 2, NULL, 0);
+  xTaskCreatePinnedToCore(taskJson,    "JSON",    4096, NULL, 1, NULL, 1);
   xTaskCreatePinnedToCore(taskServos,  "Servos",  4096, NULL, 1, NULL, 1);
   xTaskCreatePinnedToCore(taskSerial,  "Serial",  2048, NULL, 1, NULL, 1); 
 
