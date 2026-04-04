@@ -28,6 +28,8 @@ static const int PWM_RESOLUTION = 16;  // 16 bits → valeurs 0–65535
 static const uint32_t PULSE_0DEG  = 1638;
 static const uint32_t PULSE_50DEG = 3817;
 
+TaskHandle_t hTaskServos = NULL; // définition globale
+
 float appliquerDecal(int i){
     float decallage=0;
     if(i<4)decallage+=decAvt;
@@ -43,14 +45,14 @@ static uint32_t angleToDuty(float angle) {
     float pulseUs = 500.0f + (angle / 180.0f) * 2000.0f;
     return (uint32_t)((pulseUs / 20000.0f) * 65535.0f);
 }
-float fmod180(float angle){
+float fmod180(float angle){//retourne un modulo 180 (différence avec fmod: prend des float)
     return (angle<0?angle+180:(angle>180? angle-180 : angle));
 }
 static void setServo(uint8_t servo, float angle){
     uint32_t duty = angleToDuty(fmod180(angle*SERVO_MIRROIR[servo]));
     ledcWrite(servo, duty);   // canal i ↔ servo i
 }
-// Applique un angle à tous les servos
+// Applique une position
 static void setAllServos(const float position[8]) {
     //uint32_t duty = angleToDuty(angle);
     for (uint8_t i = 0; i < 8; i++) {
@@ -59,9 +61,17 @@ static void setAllServos(const float position[8]) {
     }
 }
 
+void avancer(){
+    for(int i=0;i<nbPosAvancer;i++){
+        setAllServos(positionMar[i]);
+        vTaskDelay(pdMS_TO_TICKS(300));
+    }
+}
 // === TÂCHE SERVOS ====================================================
 void taskServos(void *pvParameters) {
+    hTaskServos = xTaskGetCurrentTaskHandle(); // enregistre le handle
 
+    uint32_t cmd;
     // --- Initialisation LEDC ---
     for (uint8_t i = 0; i < 8; i++) {
         ledcSetup(i, PWM_FREQ, PWM_RESOLUTION);   // canal i, 50 Hz, 16 bits
@@ -69,16 +79,19 @@ void taskServos(void *pvParameters) {
     }
 
     // Départ : tous les servos à 0°
-    setAllServos(positionDef);
+    setAllServos(positionBas );
 
     for (;;) {    
-        
-        for(int i=0;i<nbPosAvancer;i++){
-            setAllServos(positionMar[i]);
-            vTaskDelay(pdMS_TO_TICKS(300));
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        
-
+        if (xTaskNotifyWait(0, 0xFFFFFFFF, &cmd, portMAX_DELAY)) {
+            Serial.printf("[Servos] Commande reçue : '%c'\n", (char)cmd);
+            switch ((char)cmd) {
+                case 'a': {
+                    avancer();
+                    break;
+                }
+                case 'b': /* action B */ break;
+            }
+      }
+       vTaskDelay(pdMS_TO_TICKS(100)); // Évite le busy-loop 
     }
 }

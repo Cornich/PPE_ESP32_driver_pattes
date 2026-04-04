@@ -1,5 +1,5 @@
 static const float positionDef[8]= { 75, 90, 75, 90, 75, 90, 75, 90};
-static const float positionBas[8]= { 60,115, 60,115, 60,115, 60,115};
+static const float positionBas[8]= {135,10, 135,10, 45,95, 95,95};
 
 
 #define nbPosAvancer 12
