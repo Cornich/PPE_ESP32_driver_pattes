@@ -14,6 +14,7 @@
 #define servoArriereGaucheBas  7
 static const int8_t SERVO_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
 static const int8_t SERVO_MIRROIR[8] = {1,1,-1,-1,1,1,-1,-1};
+//pour que l'envoie d'un angle fasse partir tous les servos dans la même direction
 #include "positions.hpp"
 float decDrt=0, decGch=0, decAvt=0, decArr=0;//décallage pour lever ou baisse un côté du robot
 // Paramètres LEDC

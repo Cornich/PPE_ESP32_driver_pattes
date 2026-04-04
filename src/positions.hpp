@@ -5,14 +5,14 @@ static const float positionBas[8]= { 60,115, 60,115, 60,115, 60,115};
 #define nbPosAvancer 12
 
 
-const float dha=115, dba=30; // défaut haut, défaut bas AVANT
-const float dhr=65, dbr=75; // défaut haut, défaut bas aRRIÈRE
-const float pha[nbPosAvancer/2 -1]={90,90,55,45,65};
-const float phr[nbPosAvancer/2 -1]={90,90,55,45,65};
-const float pba[nbPosAvancer/2 -1]={90,50,50,130,130};
-const float pbr[nbPosAvancer/2 -1]={90,50,50,130,130};
+const float dha=135, dba=10; // défaut haut, défaut bas AVANT
+const float dhr=45, dbr=95; // défaut haut, défaut bas aRRIÈRE
+const float pha[nbPosAvancer/2 -1]={ 70,70,35,25,45};
+const float phr[nbPosAvancer/2 -1]={ 70,70,35,25,45};
+const float pba[nbPosAvancer/2 -1]={110,70,70,150,150};
+const float pbr[nbPosAvancer/2 -1]={110,70,70,150,150};
 
-
+// les mouvements sont symétriques. Pour modifier un côté ou l'autre, voir DecXXX dans task_servos.cpp
 static const float positionMar[nbPosAvancer][8]= {
     //Séquence avant droit
  {pha[0],pba[0], dha, dba, dhr, dbr, phr[0],pbr[0]},//met la patte devant
@@ -30,4 +30,3 @@ static const float positionMar[nbPosAvancer][8]= {
  { dha, dba, dha, dba,dhr, dbr, dhr, dbr}//position initiale
 
 };
-
